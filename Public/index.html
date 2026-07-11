@@ -3,32 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CloudShare - Premium Dashboard</title>
+    <title>CloudShare - Multi-Upload Dashboard</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); min-height: 100vh; color: #f8fafc; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 30px; }
-        .card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(16px); padding: 30px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 20px 40px rgba(0,0,0,0.3); width: 100%; max-width: 600px; }
+        .card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(16px); padding: 30px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 20px 40px rgba(0,0,0,0.3); width: 100%; max-width: 650px; }
         h2 { font-size: 24px; background: linear-gradient(to right, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px; font-weight: 700; }
         .drop-zone { border: 2px dashed rgba(56, 189, 248, 0.4); border-radius: 12px; padding: 35px 20px; cursor: pointer; background: rgba(56, 189, 248, 0.02); text-align: center; transition: all 0.2s; }
         .drop-zone:hover { border-color: #38bdf8; background: rgba(56, 189, 248, 0.06); }
         .btn { background: linear-gradient(135deg, #38bdf8 0%, #4f46e5 100%); color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 15px; }
         .btn:hover { filter: brightness(1.1); }
-        .folder-controls { display: flex; gap: 10px; margin-top: 15px; }
-        .input-field { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); padding: 12px; border-radius: 10px; color: white; flex-grow: 1; font-size: 14px; }
-        .secondary-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; width: auto; margin: 0; padding: 0 20px; border-radius: 10px; cursor: pointer; }
+        .controls-row { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+        .input-field, .select-field { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); padding: 12px; border-radius: 10px; color: white; font-size: 14px; }
+        .input-field { flex-grow: 1; }
+        .select-field { width: 160px; cursor: pointer; }
+        .secondary-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 0 20px; border-radius: 10px; cursor: pointer; }
         .secondary-btn:hover { background: rgba(255,255,255,0.1); }
         
-        /* File List Explorer Styling */
         .file-list { margin-top: 15px; display: flex; flex-direction: column; gap: 10px; }
         .file-item { display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.4); padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05); }
-        .file-info { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #cbd5e1; }
+        .file-info { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #cbd5e1; overflow: hidden; }
+        .file-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px; }
+        .file-meta { font-size: 11px; color: #64748b; margin-top: 2px; }
         .icon { font-size: 18px; }
         .folder-item { cursor: pointer; background: rgba(56, 189, 248, 0.05); border: 1px solid rgba(56, 189, 248, 0.1); }
         .folder-item:hover { background: rgba(56, 189, 248, 0.1); }
-        .dl-btn { background: #34d399; color: #0f172a; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; transition: 0.2s; }
+        .dl-btn { background: #34d399; color: #0f172a; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; transition: 0.2s; white-space: nowrap; }
         .dl-btn:hover { background: #059669; color: white; }
         .breadcrumb { font-size: 13px; color: #94a3b8; margin-bottom: 10px; cursor: pointer; }
-        #status { margin-top: 15px; font-size: 14px; text-align: center; }
+        #status { margin-top: 15px; font-size: 14px; text-align: center; max-height: 150px; overflow-y: auto; }
+        .progress-line { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; text-align: left; }
     </style>
 </head>
 <body>
@@ -38,21 +42,31 @@
         <div class="breadcrumb" id="currentDirText" onclick="navigateToFolder('')">Root Directory</div>
         
         <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
-            <p id="dropZoneText">Select file to upload (Up to 1GB)</p>
-            <input type="file" id="fileInput" onchange="updateFileInfo()">
+            <p id="dropZoneText">Select one or multiple files/songs (Up to 1GB total)</p>
+            <input type="file" id="fileInput" multiple onchange="updateFileInfo()">
         </div>
         
-        <div class="folder-controls">
+        <div class="controls-row">
             <input type="text" id="folderNameInput" class="input-field" placeholder="New folder name...">
             <button class="secondary-btn" onclick="createNewFolder()">+ Folder</button>
         </div>
         
-        <button class="btn" onclick="uploadFile()">Upload Selected File</button>
+        <button class="btn" onclick="uploadFiles()">Upload All Selected Items</button>
         <div id="status"></div>
     </div>
 
     <div class="card">
-        <h2>Stored Items</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+            <h2 style="margin:0;">Stored Items</h2>
+            <select id="sortBySelect" class="select-field" onchange="loadCloudStorage()">
+                <option value="name_asc">Name (A-Z)</option>
+                <option value="name_desc">Name (Z-A)</option>
+                <option value="size_asc">Size (Smallest)</option>
+                <option value="size_desc">Size (Largest)</option>
+                <option value="date_desc">Newest Uploads</option>
+                <option value="date_asc">Oldest Uploads</option>
+            </select>
+        </div>
         <div class="file-list" id="explorerView">
             <p style="color: #94a3b8; font-size: 14px;">Syncing cloud layout...</p>
         </div>
@@ -61,118 +75,12 @@
 <script>
     let currentPath = '';
 
-    // Automatically load storage contents upon entry
     window.onload = () => { loadCloudStorage(); };
 
     function updateFileInfo() {
         const fileInput = document.getElementById('fileInput');
         const dropZoneText = document.getElementById('dropZoneText');
-        if (fileInput.files.length > 0) {
-            dropZoneText.innerText = `Ready: ${fileInput.files[0].name}`;
-            dropZoneText.style.color = '#38bdf8';
-        }
-    }
-
-    function loadCloudStorage() {
-        const explorer = document.getElementById('explorerView');
-        const dirText = document.getElementById('currentDirText');
-        
-        dirText.innerText = currentPath ? `📁 Root / ${currentPath} (Click to return home)` : '📁 Root Directory';
-
-        fetch(`https://cloud-share-b0oa.onrender.com/list-files?path=${encodeURIComponent(currentPath)}`)
-        .then(res => res.json())
-        .then(data => {
-            explorer.innerHTML = '';
+        const count = fileInput.files.length;
+        if (count > 0) {
+            dropZoneText.innerText = count === 1 ? `Ready: ${fileInput.files[0].name}` : `Ready: ${count} items queued`;
             
-            if (data.length === 0 || (data.length === 1 && data[0].name === '.placeholder')) {
-                explorer.innerHTML = `<p style="color: #94a3b8; font-size: 14px; text-align:center; padding: 20px;">This directory path is currently empty.</p>`;
-                return;
-            }
-
-            data.forEach(item => {
-                if (item.name === '.placeholder') return; // Hide internal metadata objects
-
-                const isFolder = !item.id; // Items without an explicit file ID represent folders
-                const element = document.createElement('div');
-                element.className = `file-item ${isFolder ? 'folder-item' : ''}`;
-                
-                if (isFolder) {
-                    element.onclick = () => navigateToFolder(currentPath ? `${currentPath}/${item.name}` : item.name);
-                    element.innerHTML = `
-                        <div class="file-info"><span class="icon">📁</span><strong>${item.name}</strong></div>
-                        <span style="color: #64748b; font-size:12px;">Folder</span>
-                    `;
-                } else {
-                    element.innerHTML = `
-                        <div class="file-info"><span class="icon">📄</span><span>${item.name}</span></div>
-                        <a href="${item.downloadUrl}" target="_blank" class="dl-btn">Download</a>
-                    `;
-                }
-                explorer.appendChild(element);
-            });
-        })
-        .catch(err => {
-            explorer.innerHTML = `<p style="color: #f87171; font-size: 14px;">Failed to synchronize file list view.</p>`;
-        });
-    }
-
-    function navigateToFolder(path) {
-        currentPath = path;
-        loadCloudStorage();
-    }
-
-    function createNewFolder() {
-        const folderName = document.getElementById('folderNameInput').value.trim();
-        if (!folderName) return alert('Please input a valid name string.');
-        
-        const fullFolderPath = currentPath ? `${currentPath}/${folderName}` : folderName;
-        
-        // Supabase establishes empty folders by dropping a microscopic hidden placeholder item inside the target structural route
-        const blob = new Blob([''], { type: 'text/plain' });
-        const formData = new FormData();
-        formData.append('file', blob, '.placeholder');
-
-        fetch(`https://cloud-share-b0oa.onrender.com/upload?folder=${encodeURIComponent(fullFolderPath)}`, {
-            method: 'POST',
-            body: formData
-        })
-        .then(() => {
-            document.getElementById('folderNameInput').value = '';
-            loadCloudStorage();
-        });
-    }
-
-    function uploadFile() {
-        const fileInput = document.getElementById('fileInput');
-        const statusDiv = document.getElementById('status');
-        
-        if (fileInput.files.length === 0) {
-            statusDiv.innerHTML = `<span style="color: #f87171;">Select a file first.</span>`;
-            return;
-        }
-
-        const file = fileInput.files[0];
-        statusDiv.innerHTML = `<span style="color: #38bdf8;">⚡ Uploading "${file.name}" to cloud path...</span>`;
-
-        const formData = new FormData();
-        formData.append('file', file);
-
-        fetch(`https://cloud-share-b0oa.onrender.com/upload?folder=${encodeURIComponent(currentPath)}`, {
-            method: 'POST',
-            body: formData
-        })
-        .then(res => res.json())
-        .then(() => {
-            statusDiv.innerHTML = `<span style="color: #34d399;">✓ Upload complete!</span>`;
-            document.getElementById('dropZoneText').innerText = "Select file to upload (Up to 1GB)";
-            document.getElementById('dropZoneText').style.color = '#cbd5e1';
-            fileInput.value = '';
-            loadCloudStorage(); // Instantly update the list below
-        })
-        .catch(() => {
-            statusDiv.innerHTML = `<span style="color: #f87171;">Upload connection error.</span>`;
-        });
-    }
-</script>
-</body>
-</html>
