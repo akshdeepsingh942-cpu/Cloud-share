@@ -5,80 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CloudShare - Free File Sharing</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background: #f4f7f6;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-
-        .upload-container {
-            background: #ffffff;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.05);
-            width: 450px;
-            text-align: center;
-        }
-
-        h2 {
-            color: #333;
-            margin-bottom: 20px;
-        }
-
-        .drop-zone {
-            border: 2px dashed #007bff;
-            border-radius: 8px;
-            padding: 40px 20px;
-            cursor: pointer;
-            background: #f8fbff;
-            transition: background 0.3s ease;
-        }
-
-        .drop-zone:hover {
-            background: #eef5ff;
-        }
-
-        .drop-zone p {
-            color: #666;
-            margin-top: 10px;
-        }
-
-        #fileInput {
-            display: none;
-        }
-
-        .upload-btn {
-            margin-top: 20px;
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            width: 100%;
-            font-weight: 600;
-            transition: background 0.2s;
-        }
-
-        .upload-btn:hover {
-            background: #0056b3;
-        }
-
-        #status {
-            margin-top: 15px;
-            font-size: 14px;
-            color: #28a745;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .upload-container { background: #fff; padding: 40px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.05); width: 450px; text-align: center; }
+        h2 { color: #333; margin-bottom: 20px; }
+        .drop-zone { border: 2px dashed #007bff; border-radius: 8px; padding: 40px 20px; cursor: pointer; background: #f8fbff; }
+        #fileInput { display: none; }
+        .upload-btn { margin-top: 20px; background: #007bff; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; width: 100%; font-weight: 600; }
+        #status { margin-top: 15px; font-size: 14px; word-break: break-all; }
     </style>
 </head>
 <body>
@@ -86,8 +20,7 @@
 <div class="upload-container">
     <h2>CloudShare</h2>
     <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
-        <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#007bff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-        <p>Drag & drop your files here or <strong>Browse</strong></p>
+        <p>Click to browse your file (Up to 1GB)</p>
         <input type="file" id="fileInput">
     </div>
     <button class="upload-btn" onclick="uploadFile()">Upload File</button>
@@ -109,23 +42,26 @@
         statusDiv.style.color = '#007bff';
         statusDiv.innerText = `Uploading ${file.name}...`;
 
-        // This is where the Frontend connects to the Backend
         const formData = new FormData();
         formData.append('file', file);
 
+        // Pointing exactly to your live backend server
         fetch('https://cloud-share-b0oa.onrender.com/upload', {
-    method: 'POST',
-    body: formData
-})
-            
-        .then(response => response.json())
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
         .then(data => {
             statusDiv.style.color = '#28a745';
-            statusDiv.innerHTML = `Success! Download Link: <a href="${data.downloadLink}" target="_blank">Click Here</a>`;
+            statusDiv.innerHTML = `Success! Share Link: <br><a href="${data.downloadLink}" target="_blank">${data.downloadLink}</a>`;
         })
         .catch(err => {
             statusDiv.style.color = 'red';
-            statusDiv.innerText = 'Upload failed. (Make sure your backend server is running!)';
+            statusDiv.innerText = 'Upload failed. Check your connection or server logs.';
+            console.error(err);
         });
     }
 </script>
