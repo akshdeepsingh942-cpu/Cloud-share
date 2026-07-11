@@ -3,64 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CloudShare - Free File Sharing</title>
+    <title>CloudShare - Premium File Sharing</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .upload-container { background: #fff; padding: 40px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.05); width: 450px; text-align: center; }
-        h2 { color: #333; margin-bottom: 20px; }
-        .drop-zone { border: 2px dashed #007bff; border-radius: 8px; padding: 40px 20px; cursor: pointer; background: #f8fbff; }
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+        }
+        
+        body { 
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh;
+            color: #f8fafc;
+            padding: 20px;
+        }
+        
+        .upload-container { 
+            background: rgba(30, 41, 59, 0.7); 
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 40px 30px; 
+            border-radius: 24px; 
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3); 
+            width: 100%;
+            max-width: 460px; 
+            text-align: center; 
+        }
+        
+        h2 { 
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        
+        .drop-zone { 
+            border: 2px dashed rgba(56, 189, 248, 0.4); 
+            border-radius: 16px; 
+            padding: 50px 20px; 
+            cursor: pointer; 
+            background: rgba(56, 189, 248, 0.03); 
+            transition: all 0.3s ease;
+        }
+
+        .drop-zone:hover {
+            border-color: #38bdf8;
+            background: rgba(56, 189, 248, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .drop-zone p {
+            color: #cbd5e1;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        
         #fileInput { display: none; }
-        .upload-btn { margin-top: 20px; background: #007bff; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; width: 100%; font-weight: 600; }
-        #status { margin-top: 15px; font-size: 14px; word-break: break-all; }
+        
+        .upload-btn { 
+            margin-top: 24px; 
+            background: linear-gradient(135deg, #38bdf8 0%, #4f46e5 100%); 
+            color: white; 
+            border: none; 
+            padding: 16px; 
+            border-radius: 14px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            width: 100%; 
+            font-weight: 600; 
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+            transition: all 0.2s ease;
+        }
+        
+        .upload-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+            filter: brightness(1.1);
+        }
+
+        .upload-btn:active {
+            transform: translateY(1px);
+        }
+        
+        #status { 
+            margin-top: 25px; 
+            font-size: 14px; 
+        }
+
+        /* Modern Download Link Card Style */
+        .success-card {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            padding: 20px;
+            border-radius: 16px;
+            text-align: left;
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        .success-title {
+            color: #34d399;
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .link-input-group {
+            display: flex;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            padding: 6px;
+            align-items: center;
+        }
+
+        .link-url {
+            color: #94a3b8;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 0 10px;
+            flex-grow: 1;
+            text-decoration: none;
+        }
+
+        .copy-btn {
+            background: #34d399;
+            color: #0f172a;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 7px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #059669;
+            color: white;
+        }
+
+        .error-message {
+            color: #f87171;
+            background: rgba(248, 113, 113, 0.1);
+            border: 1px solid rgba(248, 113, 113, 0.2);
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
 
 <div class="upload-container">
     <h2>CloudShare</h2>
+    <div class="subtitle">Secure, lighting fast cloud file streaming</div>
+    
     <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
-        <p>Click to browse your file (Up to 1GB)</p>
-        <input type="file" id="fileInput">
+        <p id="dropZoneText">Click to browse file (Up to 1GB)</p>
+        <input type="file" id="fileInput" onchange="updateFileInfo()">
     </div>
-    <button class="upload-btn" onclick="uploadFile()">Upload File</button>
+    
+    <button class="upload-btn" onclick="uploadFile()">Upload to Cloud</button>
     <div id="status"></div>
 </div>
 
 <script>
+    function updateFileInfo() {
+        const fileInput = document.getElementById('fileInput');
+        const dropZoneText = document.getElementById('dropZoneText');
+        if (fileInput.files.length > 0) {
+            dropZoneText.innerText = `Selected: ${fileInput.files[0].name}`;
+            dropZoneText.style.color = '#38bdf8';
+        }
+    }
+
     function uploadFile() {
         const fileInput = document.getElementById('fileInput');
         const statusDiv = document.getElementById('status');
         
         if (fileInput.files.length === 0) {
-            statusDiv.style.color = 'red';
-            statusDiv.innerText = 'Please select a file first!';
+            statusDiv.innerHTML = `<div class="error-message">Please select a file first!</div>`;
             return;
         }
 
         const file = fileInput.files[0];
-        statusDiv.style.color = '#007bff';
-        statusDiv.innerText = `Uploading ${file.name}...`;
+        statusDiv.innerHTML = `<div style="color: #38bdf8; font-weight: 500;">⚡ Streaming "${file.name}" to cloud vault...</div>`;
 
         const formData = new FormData();
         formData.append('file', file);
 
-        // Pointing exactly to your live backend server
         fetch('https://cloud-share-b0oa.onrender.com/upload', {
             method: 'POST',
             body: formData
         })
         .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
+            if (!response.ok) throw new Error('Network error');
             return response.json();
         })
         .then(data => {
-            statusDiv.style.color = '#28a745';
-            statusDiv.innerHTML = `Success! Share Link: <br><a href="${data.downloadLink}" target="_blank">${data.downloadLink}</a>`;
+            // Renders a high-end download card with an explicit action button
+            statusDiv.innerHTML = `
+                <div class="success-card">
+                    <div class="success-title">✓ File uploaded successfully</div>
+                    <div class="link-input-group">
+                        <a href="${data.downloadLink}" class="link-url" target="_blank">${data.downloadLink}</a>
+                        <a href="${data.downloadLink}" target="_blank" class="copy-btn">Download</a>
+                    </div>
+                </div>
+            `;
         })
         .catch(err => {
-            statusDiv.style.color = 'red';
-            statusDiv.innerText = 'Upload failed. Check your connection or server logs.';
+            statusDiv.innerHTML = `<div class="error-message">Upload failed. Check server logs or configurations.</div>`;
             console.error(err);
         });
     }
