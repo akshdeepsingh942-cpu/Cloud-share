@@ -1,52 +1,59 @@
 const express = require('express');
 const cors = require('cors');
 const busboy = require('busboy');
-const fs = require('fs');
-const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
-app.use(cors()); // Allows frontend to communicate with backend
-app.use(express.static('public')); // To serve uploaded files later
 
-// Create uploads directory if it doesn't exist
-const UPLOAD_DIR = path.join(__dirname, 'uploads');
-if (!fs.existsSync(UPLOAD_DIR)) {
-    fs.mkdirSync(UPLOAD_DIR);
-}
+// Enable Cross-Origin Resource Sharing so your HTML page can talk to this server
+app.use(cors());
 
+// Serve static files from the 'public' folder (where index.html lives)
+app.use(express.static('public'));
+
+// Your specific Supabase credentials connected here
+const SUPABASE_URL = 'https://magyawgmocoqzpjyuywn.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_PNBFQs_0YPvzQLvc4AvLNA_18NckPI1';
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Handle the file upload requests
 app.post('/upload', (req, res) => {
     const bb = busboy({ headers: req.headers });
-    let fileSavedPath = '';
-    let fileName = '';
 
-    bb.on('file', (name, file, info) => {
-        fileName = info.filename;
-        fileSavedPath = path.join(UPLOAD_DIR, fileName);
-        
-        // Stream the file data directly onto the hard drive
-        const saveTo = fs.createWriteStream(fileSavedPath);
-        file.pipe(saveTo);
-    });
+    bb.on('file', async (name, file, info) => {
+        const fileName = info.filename;
+        const mimeType = info.mimeType;
 
-    bb.on('finish', () => {
-        // Generate a simple download link
-        const downloadLink = `http://localhost:3000/download/${encodeURIComponent(fileName)}`;
-        res.json({ success: true, downloadLink });
+        try {
+            // Stream the incoming file chunks directly to your Supabase 'files' bucket
+            const { data, error } = await supabase.storage
+                .from('files')
+                .upload(fileName, file, {
+                    contentType: mimeType,
+                    duplex: 'half',
+                    upsert: true
+                });
+
+            if (error) throw error;
+
+            // Generate the permanent public download link
+            const { data: linkData } = supabase.storage
+                .from('files')
+                .getPublicUrl(fileName);
+
+            // Send the public download link back to the user interface
+            res.json({ success: true, downloadLink: linkData.publicUrl });
+        } catch (err) {
+            console.error('Error during upload:', err);
+            res.status(500).json({ error: 'Upload to cloud vault failed.' });
+        }
     });
 
     req.pipe(bb);
 });
 
-// Route to let users download the file
-app.get('/download/:filename', (req, res) => {
-    const filePath = path.join(UPLOAD_DIR, req.params.filename);
-    if (fs.existsSync(filePath)) {
-        res.download(filePath);
-    } else {
-        res.status(404).send('File not found.');
-    }
-});
-
-app.listen(3000, () => {
-    console.log('Server running at http://localhost:3000');
+// Use Render's automated environment port mapping, or default to 3000 locally
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server running successfully on port ${PORT}`);
 });
