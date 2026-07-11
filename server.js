@@ -9,7 +9,7 @@ const app = express();
 app.use(cors());
 
 // Serve static files from the 'public' folder (where index.html lives)
-app.use(express.static('public'));
+app.use(express.static('Public'));
 
 // Your specific Supabase credentials connected here
 const SUPABASE_URL = 'https://magyawgmocoqzpjyuywn.supabase.co';
