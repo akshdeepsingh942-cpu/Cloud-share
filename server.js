@@ -5,14 +5,13 @@ const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 app.use(cors());
-app.use(express.json()); // Allows the server to understand folder creation requests
+app.use(express.json());
 app.use(express.static('Public'));
 
 const SUPABASE_URL = 'https://magyawgmocoqzpjyuywn.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_PNBFQs_0YPvzQLvc4AvLNA_18NckPI1';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// 1. Handle File Uploads (Supports paths like folder/filename.jpg)
 app.post('/upload', (req, res) => {
     const bb = busboy({ headers: req.headers });
     let folderPath = req.query.folder ? `${req.query.folder}/` : '';
@@ -46,21 +45,32 @@ app.post('/upload', (req, res) => {
     req.pipe(bb);
 });
 
-// 2. Fetch all files and folders to display on the website
+// Dynamic route with clean sorting switches
 app.get('/list-files', async (req, res) => {
     const folder = req.query.path || '';
+    const sortParam = req.query.sort || 'name_asc';
+
+    // Parse out sorting columns
+    let column = 'name';
+    let order = 'asc';
+
+    if (sortParam === 'name_desc') { order = 'desc'; }
+    else if (sortParam === 'size_asc') { column = 'metadata.size'; order = 'asc'; }
+    else if (sortParam === 'size_desc') { column = 'metadata.size'; order = 'desc'; }
+    else if (sortParam === 'date_desc') { column = 'created_at'; order = 'desc'; }
+    else if (sortParam === 'date_asc') { column = 'created_at'; order = 'asc'; }
+
     try {
         const { data, error } = await supabase.storage
             .from('files')
             .list(folder, {
                 limit: 100,
                 offset: 0,
-                sortBy: { column: 'name', order: 'asc' }
+                sortBy: { column: column, order: order }
             });
 
         if (error) throw error;
 
-        // Map files to include their absolute public download URLs
         const formattedData = data.map(item => {
             const fullPath = folder ? `${folder}/${item.name}` : item.name;
             const { data: linkData } = supabase.storage.from('files').getPublicUrl(fullPath);
